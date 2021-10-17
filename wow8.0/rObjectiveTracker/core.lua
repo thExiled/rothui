@@ -30,6 +30,7 @@ local cfg = {
     fadeOutSmooth = "OUT",
     fadeOutDelay = 0,
   },
+  frameVisibility = "[combat] hide; show"
 }
 
 -----------------------------
@@ -44,6 +45,11 @@ ObjectiveTrackerFrame:SetSize(unpack(cfg.size))
 
 --drag frame
 rLib:CreateDragResizeFrame(ObjectiveTrackerFrame, L.dragFrames, -2, true)
+
+--frame visibility
+ObjectiveTrackerFrame.frameVisibility = cfg.frameVisibility
+ObjectiveTrackerFrame.frameVisibilityFunc = cfg.frameVisibilityFunc
+RegisterStateDriver(ObjectiveTrackerFrame, cfg.frameVisibilityFunc or "visibility", cfg.frameVisibility)
 
 --frame fader
 rLib:CreateFrameFader(ObjectiveTrackerFrame, cfg.fader)

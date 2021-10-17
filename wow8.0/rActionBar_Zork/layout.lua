@@ -78,8 +78,8 @@ rActionBar:CreateMicroMenuBar(A, micromenubar)
 -----------------------------
 
 local bar1 = {
-  framePoint      = { "BOTTOM", UIParent, "BOTTOM", 0, 265 },
-  frameScale      = 0.9,
+  framePoint      = { "BOTTOM", UIParent, "BOTTOM", 0, -100 },
+  frameScale      = 1,
   framePadding    = 5,
   buttonWidth     = 32,
   buttonHeight    = 32,
@@ -97,8 +97,8 @@ rActionBar:CreateActionBar1(A, bar1)
 -----------------------------
 
 local bar2 = {
-  framePoint      = { "TOP", A.."Bar1", "BOTTOM", 0, 0 },
-  frameScale      = 0.9,
+  framePoint      = { "BOTTOM", A.."Bar1", "TOP", 0, 0 },
+  frameScale      = 1,
   framePadding    = 5,
   buttonWidth     = 32,
   buttonHeight    = 32,
@@ -118,7 +118,7 @@ rActionBar:CreateActionBar2(A, bar2)
 --note. uses a different fader config object
 
 local bar3 = {
-  framePoint      = { "BOTTOM", UIParent, "BOTTOM", 0, 0 },
+  framePoint      = { "BOTTOM", A.."Bar2", "TOP", 0, 0 },
   frameScale      = 0.9,
   framePadding    = 5,
   buttonWidth     = 32,
@@ -202,7 +202,7 @@ local petbar = {
   numCols         = 12,
   startPoint      = "BOTTOMLEFT",
   fader           = fader,
-  --frameVisibility = "[petbattle][overridebar][vehicleui][possessbar][shapeshift] hide; [pet,mod] show; hide"
+  frameVisibility = "[overridebar][vehicleui][possessbar][shapeshift] hide; [pet,@target,exists,nodead][pet,mod][petbattle] show; hide"
 }
 --create
 rActionBar:CreatePetBar(A, petbar)
@@ -212,7 +212,7 @@ rActionBar:CreatePetBar(A, petbar)
 -----------------------------
 
 local extrabar = {
-  framePoint      = { "BOTTOM", A.."Bar1", "TOP", 0, 10 },
+  framePoint      = { "RIGHT", A.."Bar1", "LEFT", -5, 0 },
   frameScale      = 0.95,
   framePadding    = 5,
   buttonWidth     = 36,

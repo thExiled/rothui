@@ -1,0 +1,6 @@
+## interface: 90100
+## Author: zork
+## Title: rButtonTemplate
+## Notes: Blizzard button template framework
+
+core.lua

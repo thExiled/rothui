@@ -13,6 +13,8 @@ L.dragFrames      = {}
 L.addonColor      = "00FFAA00"
 L.addonShortcut   = "rmm"
 
+local GameTooltip, C_AzeriteItem = GameTooltip, C_AzeriteItem
+
 -----------------------------
 -- Config
 -----------------------------
@@ -153,45 +155,16 @@ Minimap:SetScript("OnLeave", SetTimer)
 rLib:RegisterCallback("PLAYER_ENTERING_WORLD", Hide)
 Hide(Minimap)
 
-local function numformat(v)
-  if v > 1E10 then
-    return (floor(v/1E9)).."b"
-  elseif v > 1E9 then
-    return (floor((v/1E9)*10)/10).."b"
-  elseif v > 1E7 then
-    return (floor(v/1E6)).."m"
-  elseif v > 1E6 then
-    return (floor((v/1E6)*10)/10).."m"
-  elseif v > 1E4 then
-    return (floor(v/1E3)).."k"
-  elseif v > 1E3 then
-    return (floor((v/1E3)*10)/10).."k"
-  else
-    return v
-  end
-end
-
---fps, latency and coords string
-local f1 = CreateFrame("Frame", "rInfoStringsContainer", Minimap)
-f1:SetPoint("BOTTOM",Minimap,0,-5)
+--fps, latency, and coords string with experience mouseover
+local f1 = CreateFrame("Frame", "rInfoStrings", Minimap)
+f1:ClearAllPoints()
+f1:SetPoint("BOTTOM", Minimap, 0, -5)
 
 local t = f1:CreateFontString(nil, "BACKGROUND")
 t:SetFont(STANDARD_TEXT_FONT,12,"OUTLINE")
 t:SetPoint("CENTER", f1)
 
 f1.text = t;
-
---experience
-local f2 = CreateFrame("Frame", "rExperienceContainer", Minimap)
-f2:SetPoint("BOTTOM",Minimap,0,-22)
-
-local t2 = f2:CreateFontString(nil, "BACKGROUND")
-t2:SetFont(STANDARD_TEXT_FONT,12,"OUTLINE")
-t2:SetPoint("CENTER", f2)
-
-f2.text = t2;
-
-
 
 local function rFPS()
   return floor(GetFramerate()).."fps"
@@ -202,48 +175,80 @@ local function rLatency()
 end
 
 local function rZoneCoords()
-  local x, y = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit("player"), "player"):GetXY()
   local coords
-  if x and y and x ~= 0 and y ~= 0 then
-    coords = format("%.1f, %.1f",x*100,y*100)
-  else 
-    coords = "--.-, --.-"
+  if C_Map then
+    local pos = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit("player"), "player")
+    if pos then 
+      if pos.x and pos.y and pos.x ~= 0 and pos.y ~= 0 then
+        coords = format("%.1f, %.1f",pos.x*100,pos.y*100)
+      else 
+        coords = "--.-, --.-"
+      end
+    else 
+      coords = "--.-, --.-"
+    end
   end
   return coords
-end
-
-local function rsiExpRep()
-  local xp = ""
-
-  if not IsXPUserDisabled() and (UnitLevel("player")<MAX_PLAYER_LEVEL) then
-    if GetXPExhaustion() then
-      xp = "|c009C907D("..numformat(GetXPExhaustion() or 0)..")|r "
-    else 
-      xp = ""
-    end
-    xp = "|c009C907D"..numformat(UnitXP("player")).."/"..numformat(UnitXPMax("player")).." |r"..xp.."| "..string.format("%.0f", (UnitXP("player")/UnitXPMax("player")*100)).."%|r"
-  else
-    local _, _, minimum, maximum, value = GetWatchedFactionInfo()
-    if ((value-minimum)==999) and ((maximum-minimum)==1000) then
-      xp = "|c0000FF00MAXED OUT|r"
-    else
-      xp = "|c0000FF00"..numformat(value-minimum).."/"..numformat(maximum-minimum).." | "..string.format("%.0f", (value-minimum)/(maximum-minimum)*100).."%|r"
-    end
-  end
-  return xp
 end
 
 local function rUpdateStrings()
   f1.text:SetText(rZoneCoords().." / ".."|c009C907D"..rLatency().." "..rFPS().."|r")
   f1:SetHeight(f1.text:GetStringHeight())
   f1:SetWidth(f1.text:GetStringWidth())
-
-  f2.text:SetText(rsiExpRep())
-  f2:SetHeight(f2.text:GetStringHeight())
-  f2:SetWidth(f2.text:GetStringWidth())
 end
 
-local startSearch = function(self)
+local function rInfoStringOnEnter(self)
+  GameTooltip:SetParent(f1)
+  GameTooltip:ClearAllPoints()
+  GameTooltip:SetPoint("TOP", self, 0, -17)
+  GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+  GameTooltip:AddLine(self:GetName(), 1, 0.5, 0, 1, 1, 1)
+  --experience
+  if UnitLevel("player") < MAX_PLAYER_LEVEL and not IsXPUserDisabled() then
+    local cur, max = UnitXP("player"), UnitXPMax("player")
+    local lvl = UnitLevel("player")
+    local rested = GetXPExhaustion()
+    GameTooltip:AddLine("Experience", 0, 1, 0.5, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Level", lvl, 1, 1, 1, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Cur / Max", cur.." / "..max, 1, 1, 1, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Needed", (max-cur), 1, 1, 1, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Rested", rested, 1, 1, 1, 1, 1, 1)
+  end
+  --honor
+  --if InActiveBattlefield() or IsInActiveWorldPVP() then
+    local cur, max = UnitHonor("player"), UnitHonorMax("player")
+    local lvl = UnitHonorLevel("player")
+    GameTooltip:AddLine("Honor", 0, 1, 0.5, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Level", lvl, 1, 1, 1, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Cur / Max", cur.." / "..max, 1, 1, 1, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Needed", (max-cur), 1, 1, 1, 1, 1, 1)
+  --end
+  --reputation
+  local name, standing, min, max, cur = GetWatchedFactionInfo()
+  if name then
+    GameTooltip:AddLine(name.." Reputation", 0, 1, 0.5, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Level", _G["FACTION_STANDING_LABEL"..standing], 1, 1, 1, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Cur / Max", cur.." / "..max, 1, 1, 1, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Needed", (max-cur), 1, 1, 1, 1, 1, 1)
+  end
+  --azerite
+  local azeriteItem = C_AzeriteItem.FindActiveAzeriteItem()
+  if azeriteItem then
+    local cur, max = C_AzeriteItem.GetAzeriteItemXPInfo(azeriteItem)
+    local lvl = C_AzeriteItem.GetPowerLevel(azeriteItem)
+    GameTooltip:AddLine("Azerite", 0, 1, 0.5, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Level", lvl, 1, 1, 1, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Cur / Max", cur.." / "..max, 1, 1, 1, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Needed", (max-cur), 1, 1, 1, 1, 1, 1)
+  end
+  GameTooltip:Show()
+end
+
+local function rInfoStringOnLeave(self)
+  GameTooltip:Hide()
+end
+
+local rInfoStringLoop = function(self)
   --timer
   local ag = self:CreateAnimationGroup()
   ag.anim = ag:CreateAnimation()
@@ -255,13 +260,16 @@ local startSearch = function(self)
   ag:Play()
 end
 
-local a = CreateFrame("Frame")
-a:RegisterEvent("PLAYER_LOGIN")
-a:SetScript("OnEvent", function(self, event, ...)
-  if event == "PLAYER_LOGIN" then
-    startSearch(self)
-  end
-end)
+--f1:SetScript("OnEnter", rInfoStringOnEnter)
+--f1:SetScript("OnLeave", rInfoStringOnLeave)
+
+--local a = CreateFrame("Frame")
+--a:RegisterEvent("PLAYER_LOGIN")
+--a:SetScript("OnEvent", function(self, event, ...)
+  --if event == "PLAYER_LOGIN" then
+    --rInfoStringLoop(self)
+  --end
+--end)
 
 --drag frame
 rLib:CreateDragFrame(MinimapCluster, L.dragFrames, -2, true)

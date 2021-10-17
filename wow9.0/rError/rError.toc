@@ -1,0 +1,6 @@
+## interface: 90100
+## Author: zork
+## Title: rError
+## Notes: Blacklisting and redirecting of error messages
+
+core.lua

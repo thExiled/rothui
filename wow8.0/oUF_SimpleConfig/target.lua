@@ -15,7 +15,7 @@ local A, L = ...
 L.C.target = {
   enabled = true,
   size = {265,26},
-  point = {"LEFT",UIParent,"CENTER",130,-100},
+  point = {"LEFT",UIParent,"CENTER",140,-100},
   scale = 1*L.C.globalscale,
   --fader via OnShow
   fader = {

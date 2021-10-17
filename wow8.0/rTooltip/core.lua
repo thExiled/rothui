@@ -11,44 +11,44 @@ local A, L = ...
 local unpack, type = unpack, type
 local RAID_CLASS_COLORS, FACTION_BAR_COLORS, ICON_LIST = RAID_CLASS_COLORS, FACTION_BAR_COLORS, ICON_LIST
 local GameTooltip, GameTooltipStatusBar = GameTooltip, GameTooltipStatusBar
-local GameTooltipTextRight1, GameTooltipTextRight2, GameTooltipTextRight3, GameTooltipTextRight4, GameTooltipTextRight5, GameTooltipTextRight6, GameTooltipTextRight7, GameTooltipTextRight8 = GameTooltipTextRight1, GameTooltipTextRight2, GameTooltipTextRight3, GameTooltipTextRight4, GameTooltipTextRight5, GameTooltipTextRight6, GameTooltipTextRight7, GameTooltipTextRight8
-local GameTooltipTextLeft1, GameTooltipTextLeft2, GameTooltipTextLeft3, GameTooltipTextLeft4, GameTooltipTextLeft5, GameTooltipTextLeft6, GameTooltipTextLeft7, GameTooltipTextLeft8 = GameTooltipTextLeft1, GameTooltipTextLeft2, GameTooltipTextLeft3, GameTooltipTextLeft4, GameTooltipTextLeft5, GameTooltipTextLeft6, GameTooltipTextLeft7, GameTooltipTextLeft8
+local GameTooltipTextLeft1 = GameTooltipTextLeft1
+local GameTooltipTextLeft2 = GameTooltipTextLeft2
+local GameTooltipTextLeft3 = GameTooltipTextLeft3
 local classColorHex, factionColorHex = {}, {}
-
 -----------------------------
 -- Config
 -----------------------------
 
-local cfg = {}
-cfg.textColor = {0.4,0.4,0.4}
-cfg.bossColor = {1,0,0}
-cfg.eliteColor = {1,0,0.5}
-cfg.rareeliteColor = {1,0.5,0}
-cfg.rareColor = {1,0.5,0}
-cfg.levelColor = {0.8,0.8,0.5}
-cfg.deadColor = {0.5,0.5,0.5}
-cfg.targetColor = {1,0.5,0.5}
-cfg.guildColor = {1,0,1}
-cfg.afkColor = {0,1,1}
-cfg.scale = 0.95
-cfg.fontFamily = STANDARD_TEXT_FONT
-cfg.backdrop = {
-  bgFile = "Interface\\Buttons\\WHITE8x8",
-  bgColor = {0.08,0.08,0.1,0.92},
-  edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-  borderColor = {0.1,0.1,0.1,0.6},
-  itemBorderColorAlpha = 0.9,
-  azeriteBorderColor = {1,0.3,0,0.9},
-  tile = false,
-  tileEdge = false,
-  tileSize = 16,
-  edgeSize = 16,
-  insets = {left=3, right=3, top=3, bottom=3}
+local cfg = {
+  textColor = {0.4,0.4,0.4},
+  bossColor = {1,0,0},
+  eliteColor = {1,0,0.5},
+  rareeliteColor = {1,0.5,0},
+  rareColor = {1,0.5,0},
+  levelColor = {0.8,0.8,0.5},
+  deadColor = {0.5,0.5,0.5},
+  targetColor = {1,0.5,0.5},
+  guildColor = {1,0,1},
+  afkColor = {0,1,1},
+  scale = 0.95,
+  fontFamily = STANDARD_TEXT_FONT,
+  backdrop = {
+    bgFile = "Interface\\Buttons\\WHITE8x8",
+    bgColor = {0.08,0.08,0.1,0.92},
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    borderColor = {0.1,0.1,0.1,0.6},
+    itemBorderColorAlpha = 0.9,
+    azeriteBorderColor = {1,0.3,0,0.9},
+    tile = false,
+    tileEdge = false,
+    tileSize = 16,
+    edgeSize = 16,
+    insets = {left=3, right=3, top=3, bottom=3}
+  }
 }
 
 --pos can be either a point table or a anchor string
 --cfg.pos = { "BOTTOMRIGHT", UIParent, "BOTTOMRIGHT", -10, 180 }
-cfg.pos = "ANCHOR_NONE" --"ANCHOR_CURSOR"
 
 -----------------------------
 -- Functions
@@ -81,12 +81,9 @@ local function OnTooltipSetUnit(self)
   if not unit then return end
   --color tooltip textleft2..8
   GameTooltipTextLeft2:SetTextColor(unpack(cfg.textColor))
-  GameTooltipTextLeft3:SetTextColor(unpack(cfg.textColor))
-  GameTooltipTextLeft4:SetTextColor(unpack(cfg.textColor))
-  GameTooltipTextLeft5:SetTextColor(unpack(cfg.textColor))
-  GameTooltipTextLeft6:SetTextColor(unpack(cfg.textColor))
-  GameTooltipTextLeft7:SetTextColor(unpack(cfg.textColor))
-  GameTooltipTextLeft8:SetTextColor(unpack(cfg.textColor))
+  if GameTooltipTextLeft3 then
+    GameTooltipTextLeft3:SetTextColor(unpack(cfg.textColor))
+  end
   --position raidicon
   --local raidIconIndex = GetRaidTargetIndex(unit)
   --if raidIconIndex then
@@ -109,9 +106,11 @@ local function OnTooltipSetUnit(self)
     local levelLine
     if string.find(GameTooltipTextLeft2:GetText() or "empty", "%a%s%d") then
       levelLine = GameTooltipTextLeft2
-    elseif string.find(GameTooltipTextLeft3:GetText() or "empty", "%a%s%d") then
-      GameTooltipTextLeft2:SetTextColor(unpack(cfg.guildColor)) --seems like the npc has a description, use the guild color for this
-      levelLine = GameTooltipTextLeft3
+    elseif GameTooltipTextLeft3 then
+      if string.find(GameTooltipTextLeft3:GetText() or "empty", "%a%s%d") then
+        GameTooltipTextLeft2:SetTextColor(unpack(cfg.guildColor)) --seems like the npc has a description, use the guild color for this
+        levelLine = GameTooltipTextLeft3
+      end
     end
     if levelLine then
       local l = UnitLevel(unit)

@@ -1,0 +1,7 @@
+## interface: 90100
+## Title: rButtonAura
+## Author: zork
+## Notes: Highlights action buttons when a matching unit aura is present
+## RequiredDeps: rLib
+
+core.lua
