@@ -1,4 +1,4 @@
-## interface: 90100
+## interface: 90200
 ## Title: rFilter
 ## Author: zork
 ## Notes: Buff, debuff, raidbuff and cooldown filter. Eats puppies!

@@ -1,4 +1,4 @@
-## interface: 90100
+## interface: 90200
 ## Author: zork
 ## Title: rFilter_Zork
 ## Notes: Layout and optional theme for rFilter

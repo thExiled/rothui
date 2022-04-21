@@ -1,4 +1,4 @@
-## interface: 90100
+## interface: 90200
 ## Author: zork
 ## Title: oUF_SimpleConfig
 ## Notes: oUF_Simple config

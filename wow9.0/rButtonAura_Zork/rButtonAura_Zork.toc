@@ -1,4 +1,4 @@
-## interface: 90100
+## interface: 90200
 ## Title: rButtonAura_Zork
 ## Author: zork
 ## Notes: Zork's config for rButtonAura

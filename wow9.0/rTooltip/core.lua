@@ -164,8 +164,14 @@ local function SetBackdropStyle(self,style)
   if self.IsEmbedded then return end --do nothing on embedded tooltips
   if self.TopOverlay then self.TopOverlay:Hide() end
   if self.BottomOverlay then self.BottomOverlay:Hide() end
+
+  if not self.SetBackdrop then
+    Mixin(self, BackdropTemplateMixin)
+  end
+
   self:SetBackdrop(cfg.backdrop)
   self:SetBackdropColor(unpack(cfg.backdrop.bgColor))
+  
   local _, itemLink = self:GetItem()
   if itemLink then
     local azerite = C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID(itemLink) or C_AzeriteItem.IsAzeriteItemByID(itemLink) or false
