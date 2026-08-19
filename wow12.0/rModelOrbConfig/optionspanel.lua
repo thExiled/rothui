@@ -275,6 +275,7 @@ local function RegisterOptionsPanel()
     container:Add("orb_filling27", "mum6")
     container:Add("orb_filling28", "roots")
     container:Add("orb_filling29", "bowl")
+    container:Add("orb_filling30", "wormhole")
     return container:GetData()
   end
 
