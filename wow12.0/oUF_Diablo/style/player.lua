@@ -1,0 +1,358 @@
+local A, L = ...
+
+---------------------------------------------------------------------
+-- vars
+---------------------------------------------------------------------
+
+local curveLowHealth = C_CurveUtil.CreateColorCurve()
+curveLowHealth:SetType(Enum.LuaCurveType.Step)
+curveLowHealth:AddPoint(0.0, CreateColor(1, 0, 0, 0.85))
+curveLowHealth:AddPoint(0.31, CreateColor(1, 0, 0, 0))
+
+---------------------------------------------------------------------
+-- UpdateOrbTemplate(orb, templateKeyName)
+---------------------------------------------------------------------
+
+local function UpdateOrbTemplate(orb, templateKeyName)
+
+  local templateName =   L.DB.settings.orbModelTemplates[templateKeyName]
+
+  local template = L.DB_ORB_CONFIG.presetTemplates[templateName] or L.DB_ORB_CONFIG.userTemplates[templateName] or L.DB_ORB_CONFIG.presetTemplates["_OTHER"] or nil
+  if not template then return end
+
+  local color = CreateColorFromHexString(template.fillColor)
+  local r,g,b = color:GetRGB()
+
+  -- load model into scene WITHOUT mouse enabled
+  orb:LoadModelDataByID(template.modelID, false)
+  orb.FillingStatusBar:SetStatusBarTexture(L.DB_ORB_CONFIG.mediaFolder..template.fillTexture)
+  orb.FillingStatusBar:SetStatusBarColor(r,g,b)
+  orb.OverlayFrame.SparkTexture:SetVertexColor(r,g,b,template.splitAlpha)
+  orb.ClipFrame:SetAlpha(template.modelAlpha)
+
+end
+
+---------------------------------------------------------------------
+-- StylePlayer(self)
+---------------------------------------------------------------------
+
+local function StylePlayer(self)
+
+  self:SetSize(256, 256)
+  self:SetFrameStrata("BACKGROUND")
+  L.O.playerFrame = self
+  self:SetScale(L.DB.settings.player.scale)
+  self.elementType = "base"
+
+  ---------------------------------------------------------------------
+  -- healthOrb + self.Health
+  ---------------------------------------------------------------------
+
+  local healthOrb = CreateFrame("Frame", nil, self, "rModelOrbTemplate")
+  healthOrb:SetPoint("CENTER")
+  healthOrb.FillingStatusBar:SetFrameLevel(healthOrb:GetFrameLevel()+1)
+  healthOrb.ClipFrame:SetFrameLevel(healthOrb:GetFrameLevel()+2)
+  healthOrb.OverlayFrame:SetFrameLevel(healthOrb:GetFrameLevel()+3)
+
+  local health = CreateFrame("StatusBar", nil, self)
+  self.Health = health
+  health.elementType = "health"
+  health.orbFrame = healthOrb
+  health.colorClass = true
+  health.colorReaction = true
+  health.colorHealth = true
+
+  ---------------------------------------------------------------------
+  -- powerOrb + self.Power
+  ---------------------------------------------------------------------
+
+  local powerOrb = CreateFrame("Frame", self:GetName().."PowerOrb", self, "rModelOrbTemplate")
+  powerOrb.FillingStatusBar:SetFrameLevel(powerOrb:GetFrameLevel()+1)
+  powerOrb.ClipFrame:SetFrameLevel(powerOrb:GetFrameLevel()+2)
+  powerOrb.OverlayFrame:SetFrameLevel(powerOrb:GetFrameLevel()+3)
+
+  local power = CreateFrame("StatusBar", nil, self)
+  self.Power = power
+  power.elementType = "power"
+  power.orbFrame = powerOrb
+  power.colorPower = true
+
+  ---------------------------------------------------------------------
+  -- health:UpdateColor(event, unit)
+  ---------------------------------------------------------------------
+
+  function health:UpdateColor(event, unit)
+    if(not unit or self.__unit ~= unit) then return end
+    local element = self.Health
+    local templateKeyName = nil
+    if(element.colorClass and (UnitIsPlayer(unit) or UnitInPartyIsAI(unit)))
+      or (element.colorClassNPC and not (UnitIsPlayer(unit) or UnitInPartyIsAI(unit)))
+      or (element.colorClassPet and UnitPlayerControlled(unit) and not UnitIsPlayer(unit)) then
+      local _, class = UnitClass(unit)
+      templateKeyName = "CLASS_"..class
+    elseif(element.colorReaction and UnitReaction(unit, "player")) then
+      local reaction = UnitReaction(unit, "player")
+      if reaction >= 5 then
+        templateKeyName = "REACTION_FRIENDLY"
+      elseif reaction >= 3 then
+        templateKeyName = "REACTION_NEUTRAL"
+      else
+        templateKeyName = "REACTION_HOSTILE"
+      end
+    else
+      templateKeyName = "OTHER"
+    end
+    UpdateOrbTemplate(element.orbFrame, templateKeyName)
+  end
+
+  ---------------------------------------------------------------------
+  -- health:PostUpdate(unit, cur, max, lossPerc)
+  ---------------------------------------------------------------------
+
+  function health:PostUpdate(unit, cur, max, lossPerc)
+    self.orbFrame.FillingStatusBar:SetValue(UnitHealthPercent(unit, true), Enum.StatusBarInterpolation.ExponentialEaseOut)
+    local color = UnitHealthPercent(unit, true, curveLowHealth)
+    self.orbFrame.OverlayFrame.LowHealthTexture:SetVertexColor(color:GetRGBA())
+  end
+
+  ---------------------------------------------------------------------
+  -- power:UpdateColor(event, unit)
+  ---------------------------------------------------------------------
+
+  function power:UpdateColor(event, unit)
+    if(not unit or self.__unit ~= unit) then return end
+    local element = self.Power
+    local powerID, powerType = UnitPowerType(unit)
+    local templateKeyName = nil
+    if powerType then
+      templateKeyName = "POWER_"..powerType
+    else
+      templateKeyName = "OTHER"
+    end
+    UpdateOrbTemplate(element.orbFrame, templateKeyName)
+  end
+
+  ---------------------------------------------------------------------
+  -- power:PostUpdate(unit, cur, min, max)
+  ---------------------------------------------------------------------
+
+  function power:PostUpdate(unit, cur, min, max)
+    self.orbFrame.FillingStatusBar:SetValue(UnitPowerPercent(unit, UnitPowerType(unit), true), Enum.StatusBarInterpolation.ExponentialEaseOut)
+  end
+
+  ---------------------------------------------------------------------
+  -- Dispellable Debuff Highlight
+  -- healthOrb.OverlayFrame.GlowTexture
+  ---------------------------------------------------------------------
+
+  local function PostCreateButton(element, button, options)
+    button.Icon:SetAlpha(0)
+    local dispelHighlight = button:CreateTexture()
+    dispelHighlight:SetAllPoints()
+    dispelHighlight:SetTexture(healthOrb.OverlayFrame.GlowTexture:GetTexture())
+    dispelHighlight:SetBlendMode(healthOrb.OverlayFrame.GlowTexture:GetBlendMode())
+    dispelHighlight:SetDrawLayer(healthOrb.OverlayFrame.GlowTexture:GetDrawLayer())
+    button:AddDispelTypeTexture(dispelHighlight, {
+      style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
+      showWhenHarmful = true,
+      showWhenHelpful = false,
+      customDispelColorMap = element.__owner.colors.dispel,
+    })
+  end
+
+  local Auras = self:CreateAuras()
+  Auras.num = 1
+  Auras.maxFrameCount = 1
+  Auras.size = 256
+  Auras.disableMouse = true
+  Auras.disableCooldown = true
+  Auras.showCount = false
+  Auras.showDebuffBorder = false
+  Auras.showBuffBorder = false
+  Auras.showDuration = false
+  Auras.cancelButton = false
+  Auras.PostCreateButton = PostCreateButton
+
+  Auras:SetPoint("CENTER")
+  Auras:SetFrameLevel(healthOrb:GetFrameLevel()+3)
+
+  Auras:AddGroup(AuraUtil.AuraFilters.Harmful.."|"..AuraUtil.AuraFilters.Dispellable)
+
+  ---------------------------------------------------------------------
+  -- CustomAbsorb - orb texture filling top to bottom
+  ---------------------------------------------------------------------
+
+  local absorbBar = CreateFrame("StatusBar", nil, healthOrb.OverlayFrame)
+  absorbBar:SetSize(256, 256)
+  absorbBar:SetPoint("CENTER")
+  absorbBar:SetStatusBarTexture([[Interface\Buttons\WHITE8X8]])
+  absorbBar:SetStatusBarColor(1, 1, 1, 0)
+  absorbBar:SetOrientation("VERTICAL")
+  absorbBar:SetFillStyle(3)
+  absorbBar:SetRotatesTexture(true)
+
+  absorbBar.clipFrame = CreateFrame("Frame", nil, absorbBar)
+  absorbBar.clipFrame:SetClipsChildren(true)
+  absorbBar.clipFrame:SetPoint("TOPLEFT", absorbBar)
+  absorbBar.clipFrame:SetPoint("BOTTOMRIGHT", absorbBar:GetStatusBarTexture())
+
+  absorbBar.clipFrame.fill = absorbBar.clipFrame:CreateTexture(nil, "BACKGROUND", nil, 4)
+  absorbBar.clipFrame.fill:SetSize(256, 256)
+  absorbBar.clipFrame.fill:SetPoint("TOPLEFT")
+  absorbBar.clipFrame.fill:SetTexture(L.mediaFolder.."orb_absorb")
+  absorbBar.clipFrame.fill:SetVertexColor(0.5, 0.81, 0.95, 1)
+  absorbBar.clipFrame.fill:SetBlendMode("BLEND")
+
+  self.CustomAbsorb = absorbBar
+
+  ---------------------------------------------------------------------
+  -- right click menu
+  ---------------------------------------------------------------------
+
+  self:RegisterForClicks("AnyUp")
+  self.Menu = function(self)
+    if OpenContextMenu then
+      OpenContextMenu(self, { unit = self.__unit, name = self.name, })
+    else
+      UnitPopup_OpenMenu(self.__unit)
+    end
+  end
+  self:SetAttribute("*type2", "togglemenu")
+
+  ---------------------------------------------------------------------
+  -- angel + demon
+  ---------------------------------------------------------------------
+
+  local healthOrbHighlightFrame = CreateFrame("Frame", nil, healthOrb.OverlayFrame)
+  healthOrbHighlightFrame:SetSize(256, 256)
+  healthOrbHighlightFrame:SetPoint("CENTER")
+  healthOrbHighlightFrame:SetFrameLevel(math.max(absorbBar:GetFrameLevel(), healthOrb.OverlayFrame:GetFrameLevel())+1)
+
+  --add to object list
+  L.O.hidePlayerArtTextures = {}
+
+  local texDemon = healthOrbHighlightFrame:CreateTexture(nil,"BACKGROUND",nil,2)
+  texDemon:SetSize(512,256)
+  texDemon:SetPoint("BOTTOMRIGHT", healthOrb.OverlayFrame, "BOTTOMLEFT", 370, 10)
+  texDemon:SetTexture(L.mediaFolder.."d3_demon")
+  L.O.hidePlayerArtTextures.texDemon = texDemon
+
+  local texLeftEdge = healthOrbHighlightFrame:CreateTexture(nil,"BACKGROUND",nil,2)
+  texLeftEdge:SetSize(128,64)
+  texLeftEdge:SetPoint("BOTTOMLEFT", healthOrb.OverlayFrame, "BOTTOMRIGHT", -100, 15)
+  texLeftEdge:SetTexture(L.mediaFolder.."d3_left")
+  L.O.hidePlayerArtTextures.texLeftEdge = texLeftEdge
+
+  local texAngel = power.orbFrame.OverlayFrame:CreateTexture(nil,"BACKGROUND",nil,2)
+  texAngel:SetSize(512,256)
+  texAngel:SetPoint("BOTTOMLEFT", power.orbFrame.OverlayFrame, "BOTTOMRIGHT", -370, 10)
+  texAngel:SetTexture(L.mediaFolder.."d3_angel")
+  L.O.hidePlayerArtTextures.texAngel = texAngel
+
+  local texRightEdge = power.orbFrame.OverlayFrame:CreateTexture(nil,"BACKGROUND",nil,2)
+  texRightEdge:SetSize(128,64)
+  texRightEdge:SetPoint("BOTTOMRIGHT", power.orbFrame.OverlayFrame, "BOTTOMLEFT", 100, 15)
+  texRightEdge:SetTexture(L.mediaFolder.."d3_right")
+  L.O.hidePlayerArtTextures.texRightEdge = texRightEdge
+
+  if L.DB.settings.player.hideArt == true then
+    L.O.hidePlayerArtTextures.texDemon:Hide()
+    L.O.hidePlayerArtTextures.texLeftEdge:Hide()
+    L.O.hidePlayerArtTextures.texAngel:Hide()
+    L.O.hidePlayerArtTextures.texRightEdge:Hide()
+  end
+
+  -------------------------------------------
+  -- movePlayerFrame
+  -------------------------------------------
+
+  local movePlayerFrame = CreateFrame("Frame", nil, UIParent)
+  --add to object list
+  L.O.movePlayerFrame = movePlayerFrame
+  movePlayerFrame:SetFrameLevel(healthOrbHighlightFrame:GetFrameLevel()+1)
+  movePlayerFrame:SetSize(256, 256)
+  movePlayerFrame:SetScale(L.DB.settings.player.scale)
+  movePlayerFrame:ClearAllPoints()
+  movePlayerFrame:SetPoint(L.DB.playerPosition.point, UIParent, L.DB.playerPosition.relativePoint, L.DB.playerPosition.xOfs, L.DB.playerPosition.yOfs)
+
+  --move the player frame to center of the mover
+  self:SetPoint("CENTER", movePlayerFrame, "CENTER", 0, 0)
+
+  movePlayerFrame.bg = movePlayerFrame:CreateTexture(nil, "BACKGROUND")
+  movePlayerFrame.bg:SetAllPoints()
+  movePlayerFrame.bg:SetColorTexture(0, 1, 1, 0.5)
+
+  if L.DB.settings.player.lockPlayerFrame == true then
+    movePlayerFrame:EnableMouse(false)
+    movePlayerFrame.bg:Hide()
+  else
+    movePlayerFrame:EnableMouse(true)
+    movePlayerFrame.bg:Show()
+  end
+
+  movePlayerFrame:SetMovable(true)
+  movePlayerFrame:SetClampedToScreen(true)
+  movePlayerFrame:SetClampRectInsets(50, -50, -50, 50)
+  movePlayerFrame:RegisterForDrag("LeftButton")
+  movePlayerFrame:SetScript("OnDragStart", function(self)
+    self:StartMoving()
+  end)
+  movePlayerFrame:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
+    L.DB.playerPosition = {
+      point = point,
+      relativePoint  = relativePoint,
+      xOfs = xOfs,
+      yOfs = yOfs
+    }
+  end)
+
+  -------------------------------------------
+  -- movePlayerPowerFrame
+  -------------------------------------------
+
+  local movePlayerPowerFrame = CreateFrame("Frame", nil, UIParent)
+  --add to object list
+  L.O.movePlayerPowerFrame = movePlayerPowerFrame
+  movePlayerPowerFrame:SetFrameLevel(powerOrb.OverlayFrame:GetFrameLevel()+1)
+  movePlayerPowerFrame:SetSize(256, 256)
+  movePlayerPowerFrame:SetScale(L.DB.settings.player.scale)
+  movePlayerPowerFrame:ClearAllPoints()
+  movePlayerPowerFrame:SetPoint(L.DB.playerPowerPosition.point, UIParent, L.DB.playerPowerPosition.relativePoint, L.DB.playerPowerPosition.xOfs, L.DB.playerPowerPosition.yOfs)
+
+  --move the player frame to center of the mover
+  powerOrb:SetPoint("CENTER", movePlayerPowerFrame, "CENTER", 0, 0)
+
+  movePlayerPowerFrame.bg = movePlayerPowerFrame:CreateTexture(nil, "BACKGROUND")
+  movePlayerPowerFrame.bg:SetAllPoints()
+  movePlayerPowerFrame.bg:SetColorTexture(0, 1, 1, 0.5)
+
+  if L.DB.settings.player.lockPlayerPowerFrame == true then
+    movePlayerPowerFrame:EnableMouse(false)
+    movePlayerPowerFrame.bg:Hide()
+  else
+    movePlayerPowerFrame:EnableMouse(true)
+    movePlayerPowerFrame.bg:Show()
+  end
+
+  movePlayerPowerFrame:SetMovable(true)
+  movePlayerPowerFrame:SetClampedToScreen(true)
+  movePlayerPowerFrame:SetClampRectInsets(50, -50, -50, 50)
+  movePlayerPowerFrame:RegisterForDrag("LeftButton")
+  movePlayerPowerFrame:SetScript("OnDragStart", function(self)
+    self:StartMoving()
+  end)
+  movePlayerPowerFrame:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    local point, relativeTo, relativePoint, xOfs, yOfs = self:GetPoint()
+    L.DB.playerPowerPosition = {
+      point = point,
+      relativePoint  = relativePoint,
+      xOfs = xOfs,
+      yOfs = yOfs
+    }
+  end)
+
+end
+L.F.StylePlayer = StylePlayer
