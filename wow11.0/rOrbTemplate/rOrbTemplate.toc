@@ -1,0 +1,10 @@
+## Interface: 110005
+## Title: rOrbTemplate
+## Author: zork
+## Version: 110005.01
+## Notes: Orb template engine
+## IconTexture: Interface\AddOns\rOrbTemplate\assets\logo-64
+
+orb_layouts.lua
+
+OrbTemplate.xml

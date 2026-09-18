@@ -1,0 +1,7 @@
+## Interface: 120100
+## Title: Radial Progress Test
+## Notes: To test new radial texture api
+## Author: zork
+## Version: 1.0
+
+rRadialProgressTest.lua

@@ -1,0 +1,10 @@
+## Interface: 110005
+## Title: rLib
+## Author: zork
+## Version: 110005.01
+## Notes: Zork's addon library.
+## IconTexture: Interface\AddOns\rLib\assets\logo-64
+
+core.lua
+framefader.lua
+slashcmd.lua

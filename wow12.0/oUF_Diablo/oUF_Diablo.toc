@@ -1,0 +1,18 @@
+## Interface: 120007, 120100
+## Title: oUF_Diablo
+## Notes: Diablo orb player unitframes
+## Author: zork
+## Version: 12.07
+## Category: oUF
+## SavedVariables: oUF_Diablo_DB
+## IconTexture: Interface\AddOns\oUF_Diablo\assets\logo-64
+## RequiredDeps: oUF, rModelOrbConfig
+## X-DB-Version: 14
+
+elements/CustomAbsorb.lua
+init.lua
+db.lua
+optionspanel.lua
+style/player.lua
+style.lua
+events.lua

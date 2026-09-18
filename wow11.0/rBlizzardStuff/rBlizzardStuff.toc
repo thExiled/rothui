@@ -1,0 +1,13 @@
+## Interface: 110005
+## Title: rBlizzardStuff
+## Author: zork
+## Version: 110005.01
+## Notes: Blizzard frame adjustments
+## IconTexture: Interface\AddOns\rLib\assets\logo-64
+## RequiredDeps: rLib
+
+blizzardui.lua
+chat.lua
+nameplate.lua
+junk.lua
+vignette.lua
