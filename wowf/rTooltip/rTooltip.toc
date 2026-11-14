@@ -1,0 +1,7 @@
+## Interface: 16001
+## Author: zork
+## Title: rTooltip |cffff6600Forever|r
+## Notes: Tooltip enhancements
+
+config.lua
+core.lua

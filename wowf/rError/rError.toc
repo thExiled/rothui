@@ -1,0 +1,6 @@
+## interface: 16001
+## Author: thExiled
+## Title: rError |cffff6600Forever|r
+## Notes: Blacklisting and redirecting of error messages
+
+core.lua

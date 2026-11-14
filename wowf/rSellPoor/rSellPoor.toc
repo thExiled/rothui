@@ -1,0 +1,6 @@
+## Interface: 16001
+## Author: zork
+## Title: rSellPoor |cffff6600Forever|r
+## Notes: Sell items of poor quality automatically upon vendor visit
+
+rSellPoor.lua
